@@ -110,61 +110,18 @@ async def get_sender_details(chat_id, user_id):
 
 
 async def update_source_groups():
-    """Source guruhlarni yangilash va cache'ga yuklash"""
-    print("🔄 Source guruhlar yangilanmoqda...")
+    """
+    Cache'ni yangilash - bot_state.json dan configured guruhlarni o'qib cache'ga yuklash
+    ESLATMA: Bu funksiya bot_state.json ni O'ZGARTIRMAYDI, faqat cache'ni yangilaydi!
+    """
+    print("🔄 Cache yangilanmoqda...")
 
-    state = load_state()
-
-    # Target guruhlarni exclude qilish
-    exclude_targets = set(str(t) for t in state.get("target_groups", []))
-
-    # Mavjud source_groups ni o'qish
-    configured_sources = state.get("source_groups", [])
-
-    # Yangi struktura
-    new_sources = []
-
-    # Barcha dialoglarni olish
-    async for dialog in app.get_dialogs():
-        chat = dialog.chat
-
-        # Faqat supergroup va group
-        if chat.type not in ["supergroup", "group"]:
-            continue
-
-        chat_id = str(chat.id)
-        username = chat.username
-
-        # Target guruhlarda bo'lmasligi kerak
-        if chat_id in exclude_targets or f"-100{chat_id}" in exclude_targets:
-            continue
-
-        group_key = username.lower() if username else chat_id
-
-        # Configured sources dan type ni olish
-        existing_type = "normal"
-        for src in configured_sources:
-            if isinstance(src, dict):
-                if src.get("id") == group_key:
-                    existing_type = src.get("type", "normal")
-                    break
-            elif src == group_key:
-                existing_type = "normal"
-                break
-
-        new_sources.append({
-            "id": group_key,
-            "type": existing_type
-        })
-
-    # Saqlash
-    state["source_groups"] = new_sources
-    save_state(state)
-
-    # Cache'ni yangilash
+    # FAQAT cache'ni yangilash - bot_state.json ga tegmaslik!
     await rebuild_cache()
 
-    print(f"✅ {len(new_sources)} ta guruh yangilandi")
+    state = load_state()
+    configured_sources = state.get("source_groups", [])
+    print(f"✅ {len(configured_sources)} ta configured guruh cache'ga yuklandi")
 
 
 async def rebuild_cache():
