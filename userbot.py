@@ -2,14 +2,6 @@ import re
 import asyncio
 from datetime import datetime
 from pyrogram import Client, filters
-from pyrogram.raw import types, functions
-from pyrogram.raw.types import (
-    UpdateNewMessage,
-    UpdateNewChannelMessage,
-    PeerChannel,
-    Message,
-    MessageEntityPhone
-)
 from storage import save_state, load_state
 
 # ⚡ TEZLIK UCHUN: uvloop event loop (agar mavjud bo'lsa)
@@ -186,9 +178,9 @@ async def rebuild_cache():
     print(f"📦 Cache: {fast_count} ta fast, {normal_count} ta normal guruh")
 
 
-async def handle_fast_message(message, chat_id, chat_username, matched_keyword, user_identifier=None):
+async def handle_fast_message_v2(message, chat_id, chat_username, matched_keyword, user_identifier=None):
     """
-    ⚡ FAST guruhlar uchun - FAQAT RAW MESSAGE
+    ⚡ FAST guruhlar uchun - Pyrogram Message obyekti
     user_identifier = username yoki telefon raqami
     """
     state = load_state()
@@ -207,7 +199,7 @@ async def handle_fast_message(message, chat_id, chat_username, matched_keyword, 
                 buffer_id = buffer_group
 
             # TEZKOR yuborish
-            message_text = message.message or "[Media/Sticker/File]"
+            message_text = message.text or message.caption or "[Media/Sticker/File]"
 
             # User identifier formatini yaratish
             if user_identifier:
@@ -241,19 +233,19 @@ async def handle_fast_message(message, chat_id, chat_username, matched_keyword, 
     # Target guruhlarga yuborish
     if target_groups:
         asyncio.create_task(
-            send_to_targets_fast(message, chat_id, chat_username, matched_keyword, target_groups, user_identifier)
+            send_to_targets_fast_v2(message, chat_id, chat_username, matched_keyword, target_groups, user_identifier)
         )
 
 
-async def send_to_targets_fast(message, chat_id, chat_username, matched_keyword, target_groups, user_identifier=None):
+async def send_to_targets_fast_v2(message, chat_id, chat_username, matched_keyword, target_groups, user_identifier=None):
     """
-    Target guruhlarga yuborish - FAST mode uchun
+    Target guruhlarga yuborish - FAST mode uchun (Pyrogram Message)
     """
     try:
-        # RAW ma'lumotlar
-        user_id = message.from_id.user_id if hasattr(message.from_id, 'user_id') else None
-        message_text = message.message or "[Media/Sticker/File]"
-        timestamp = datetime.fromtimestamp(message.date).strftime('%d.%m.%Y %H:%M')
+        # Ma'lumotlar
+        user_id = message.from_user.id if message.from_user else None
+        message_text = message.text or message.caption or "[Media/Sticker/File]"
+        timestamp = message.date.strftime('%d.%m.%Y %H:%M')
 
         # Link yaratish
         if chat_username:
@@ -302,24 +294,24 @@ async def send_to_targets_fast(message, chat_id, chat_username, matched_keyword,
                 print(f"❌ Target xatolik {target}: {e}")
 
     except Exception as e:
-        print(f"❌ send_to_targets_fast xatolik: {e}")
+        print(f"❌ send_to_targets_fast_v2 xatolik: {e}")
 
 
-async def handle_normal_message(message, chat_id, chat_username, matched_keyword):
+async def handle_normal_message_v2(message, chat_id, chat_username, matched_keyword):
     """
-    📝 NORMAL guruhlar uchun - to'liq ma'lumot bilan
+    📝 NORMAL guruhlar uchun - to'liq ma'lumot bilan (Pyrogram Message)
     """
     state = load_state()
     target_groups = state.get("target_groups", [])
 
-    await format_and_send_to_targets(message, chat_id, chat_username, matched_keyword, target_groups, is_fast=False)
+    await format_and_send_to_targets_v2(message, chat_id, chat_username, matched_keyword, target_groups, is_fast=False)
 
 
-async def format_and_send_to_targets(message, chat_id, chat_username, matched_keyword, target_groups, is_fast=False):
-    """Xabarni formatlab target guruhlarga yuborish"""
+async def format_and_send_to_targets_v2(message, chat_id, chat_username, matched_keyword, target_groups, is_fast=False):
+    """Xabarni formatlab target guruhlarga yuborish (Pyrogram Message)"""
     try:
         # User ID ni darhol olish (message dan)
-        user_id = message.from_id.user_id if hasattr(message.from_id, 'user_id') else None
+        user_id = message.from_user.id if message.from_user else None
 
         # Foydalanuvchi ma'lumotlarini olishga harakat (sekinroq)
         user_info = await get_sender_details(chat_id, user_id) if user_id else None
@@ -336,7 +328,7 @@ async def format_and_send_to_targets(message, chat_id, chat_username, matched_ke
             sender_username = "❌ Yo'q"
             sender_phone = "❌ Yo'q"
 
-        timestamp = datetime.fromtimestamp(message.date).strftime('%d.%m.%Y %H:%M')
+        timestamp = message.date.strftime('%d.%m.%Y %H:%M')
 
         # Link yaratish
         if chat_username:
@@ -346,7 +338,7 @@ async def format_and_send_to_targets(message, chat_id, chat_username, matched_ke
             message_link = f"https://t.me/c/{pure_id}/{message.id}"
 
         # Xabar matni
-        message_text = message.message or "[Media/Sticker/File]"
+        message_text = message.text or message.caption or "[Media/Sticker/File]"
 
         # Format
         speed_emoji = "⚡" if is_fast else "📝"
@@ -382,50 +374,28 @@ async def format_and_send_to_targets(message, chat_id, chat_username, matched_ke
         print(f"❌ Format xatolik: {e}")
 
 
-# ⚡⚡⚡ MUHIM: Raw handler MODULE DARAJASIDA e'lon qilingan
-# Bu app.start() dan OLDIN registratsiya qilinishini ta'minlaydi
-@app.on_raw_update()
-async def raw_message_handler(client, update, users, chats):
+# ⚡⚡⚡ MUHIM: Message handler MODULE DARAJASIDA e'lon qilingan
+# Pyrogram oddiy message handler'larni raw'dan ko'ra yaxshiroq qo'llab-quvvatlaydi
+@app.on_message()
+async def message_handler(client, message):
     """
-    ⚡ RAW xabarlarni real-time ushlash - PYROGRAM
+    ⚡ Barcha xabarlarni ushlash - PYROGRAM
     Bu handler module darajasida, shuning uchun app.start() avtomatik registratsiya qiladi
     """
     try:
-        # DEBUG: Raw update keldi
-        print(f"🔵 Raw update keldi: {type(update).__name__}")
-
-        # Faqat yangi xabarlar
-        if not isinstance(update, (UpdateNewMessage, UpdateNewChannelMessage)):
-            return
-
-        print(f"🟢 Yangi xabar update!")
-
-        # Message obyektini olish
-        message = None
-        if hasattr(update, 'message') and isinstance(update.message, Message):
-            message = update.message
-        else:
-            print(f"⚠️ Message obyekti topilmadi")
-            return
+        # DEBUG: Xabar keldi
+        print(f"🔵 Xabar keldi!")
 
         # Xabar matni yo'q bo'lsa, o'tkazib yuborish
-        if not message.message:
+        if not message.text:
             print(f"⚠️ Xabar matni yo'q (media/sticker/etc)")
             return
 
-        print(f"📝 Xabar matni: {message.message[:50]}...")
+        print(f"📝 Xabar matni: {message.text[:50]}...")
 
-        # Chat ID ni aniqlash
-        peer = message.peer_id
-        if isinstance(peer, PeerChannel):
-            chat_id = peer.channel_id
-            # Pyrogram negativ ID ishlatadi
-            if chat_id > 0:
-                chat_id = int(f"-100{chat_id}")
-            print(f"📍 Chat ID: {chat_id}")
-        else:
-            print(f"⚠️ PeerChannel emas: {type(peer).__name__}")
-            return
+        # Chat ID ni olish
+        chat_id = message.chat.id
+        print(f"📍 Chat ID: {chat_id}")
 
         # Cache'dan tekshirish - JUDA TEZ
         group_type = None
@@ -460,7 +430,7 @@ async def raw_message_handler(client, update, users, chats):
             print(f"⚠️ Keywords yo'q, skip")
             return
 
-        matched_keyword = check_keyword_match(message.message, keywords)
+        matched_keyword = check_keyword_match(message.text, keywords)
         if not matched_keyword:
             print(f"❌ Keyword match yo'q")
             return
@@ -471,7 +441,7 @@ async def raw_message_handler(client, update, users, chats):
         blackwords = [bw.lower().strip() for bw in state.get("blackwords", [])]
         if blackwords:
             print(f"🚫 Blackwords tekshirilmoqda ({len(blackwords)} ta)...")
-            found_blackword = check_blackword(message.message, blackwords)
+            found_blackword = check_blackword(message.text, blackwords)
             if found_blackword:
                 print(f"🚫 Blackword topildi: '{found_blackword}' - xabar o'tkazib yuborildi")
                 return
@@ -486,31 +456,28 @@ async def raw_message_handler(client, update, users, chats):
         user_identifier = None
 
         # 1. Telefon raqami (entities'dan - eng ishonchli)
-        if hasattr(message, 'entities') and message.entities:
+        if message.entities:
             for entity in message.entities:
-                if isinstance(entity, MessageEntityPhone):
+                if entity.type.value == "phone_number":
                     phone_start = entity.offset
                     phone_length = entity.length
-                    user_identifier = message.message[phone_start:phone_start + phone_length]
+                    user_identifier = message.text[phone_start:phone_start + phone_length]
                     print(f"📞 Telefon topildi: {user_identifier}")
                     break
 
         # 2. post_author (ba'zi guruhlar)
-        if not user_identifier and hasattr(message, 'post_author') and message.post_author:
-            user_identifier = message.post_author
-            print(f"✍️ Post author: {user_identifier}")
+        if not user_identifier and hasattr(message, 'author_signature') and message.author_signature:
+            user_identifier = message.author_signature
+            print(f"✍️ Author signature: {user_identifier}")
 
-        # 3. from_id dan username olishga harakat
-        if not user_identifier and hasattr(message, 'from_id'):
-            try:
-                # users dict'dan topish (Pyrogram raw update'da users keladi)
-                if hasattr(message.from_id, 'user_id') and message.from_id.user_id in users:
-                    user = users[message.from_id.user_id]
-                    if hasattr(user, 'username') and user.username:
-                        user_identifier = user.username
-                        print(f"👤 Username topildi: {user_identifier}")
-            except:
-                pass
+        # 3. from_user dan username olish
+        if not user_identifier and message.from_user:
+            if message.from_user.username:
+                user_identifier = f"@{message.from_user.username}"
+                print(f"👤 Username topildi: {user_identifier}")
+            elif message.from_user.phone_number:
+                user_identifier = message.from_user.phone_number
+                print(f"📞 Phone topildi: {user_identifier}")
 
         if not user_identifier:
             print(f"⚠️ User identifier topilmadi")
@@ -519,14 +486,16 @@ async def raw_message_handler(client, update, users, chats):
         if group_type == "fast":
             # ⚡ FAST: DARHOL buffer ga yuborish
             print(f"🚀 FAST mode: buffer'ga yuborish...")
-            asyncio.create_task(handle_fast_message(message, chat_id, chat_username, matched_keyword, user_identifier))
+            await handle_fast_message_v2(message, chat_id, chat_username, matched_keyword, user_identifier)
         else:
             # 📝 NORMAL: oddiy jarayon
             print(f"📝 NORMAL mode: formatlab yuborish...")
-            asyncio.create_task(handle_normal_message(message, chat_id, chat_username, matched_keyword))
+            await handle_normal_message_v2(message, chat_id, chat_username, matched_keyword)
 
     except Exception as e:
-        print(f"❌ Raw handler xatolik: {e}")
+        print(f"❌ Message handler xatolik: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 async def setup_cache():
