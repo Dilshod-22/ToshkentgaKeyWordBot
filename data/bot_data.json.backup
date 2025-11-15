@@ -1,0 +1,120 @@
+{
+  "keywords": [
+    "kire",
+    "keri",
+    "odam bor",
+    "керак",
+    "кире",
+    "олиш кире",
+    "bo'sh",
+    "taksi kerek",
+    "qancha",
+    "salom"
+  ],
+  "source_groups": [
+    {
+      "id": "tashkent_andijon1",
+      "type": "fast"
+    },
+    {
+      "id": "andijon_toshkenta",
+      "type": "fast"
+    },
+    {
+      "id": "toshkent_dostlik_chinobod",
+      "type": "normal"
+    },
+    {
+      "id": "andijon_toshkent_60_01",
+      "type": "normal"
+    },
+    {
+      "id": "boztoshkent16",
+      "type": "normal"
+    },
+    {
+      "id": "marhamat_asaka_toshkent_taxi",
+      "type": "normal"
+    },
+    {
+      "id": "shahrixontoshkentaxi",
+      "type": "normal"
+    },
+    {
+      "id": "toshkentandijontaksi1",
+      "type": "normal"
+    },
+    {
+      "id": "olxbekoboduz",
+      "type": "normal"
+    },
+    {
+      "id": "dovontaksi",
+      "type": "normal"
+    },
+    {
+      "id": "andijon_asaka_sharxon_toshkent",
+      "type": "normal"
+    },
+    {
+      "id": "bostontaxi",
+      "type": "normal"
+    },
+    {
+      "id": "andijon_fans",
+      "type": "normal"
+    },
+    {
+      "id": "andijontoshkent14",
+      "type": "normal"
+    },
+    {
+      "id": "chinobod_baliqchi_toshkent_883",
+      "type": "normal"
+    },
+    {
+      "id": "a_muhammad_9",
+      "type": "normal"
+    },
+    {
+      "id": "toshkent_vodiy_taksilari",
+      "type": "normal"
+    },
+    {
+      "id": "2442423670",
+      "type": "normal"
+    },
+    {
+      "id": "baliqchi9_toshkent",
+      "type": "normal"
+    },
+    {
+      "id": "boztoshkent",
+      "type": "normal"
+    },
+    {
+      "id": "ishonchtaksi_uz",
+      "type": "normal"
+    },
+    {
+      "id": "baliqchi_chinabot_toshkent_taxi",
+      "type": "normal"
+    },
+    {
+      "id": "guliston_andijon_taksi",
+      "type": "normal"
+    },
+    {
+      "id": "2400953460",
+      "type": "normal"
+    },
+    {
+      "id": "linklink12123",
+      "type": "normal"
+    }
+  ],
+  "target_groups": [
+    "-1003457798464"
+  ],
+  "buffer_group": ""
+}

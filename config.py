@@ -17,6 +17,6 @@ DATA_FILE = "bot_data.json"
 
 # Buffer guruh (FAST source guruhlar uchun)
 # Fast guruhlardan kelgan xabarlar darhol bu yerga forward qilinadi
-# Keyin orqa fonda formatlab asosiy target guruhga yuboriladi
+# Keyin orqa fonda formatlab asosiy target guruhga yuborilad i
 # Misol: BUFFER_GROUP = "-1001234567890"
 BUFFER_GROUP = ""  # Bu yerga buffer guruh ID sini yozing

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c:*)",
+      "Bash(dir:*)",
+      "Bash(python restructure.py:*)",
+      "Bash(python fix_imports.py:*)",
+      "Bash(tree:*)",
+      "Bash(python main.py:*)",
+      "Bash(timeout /t 3)",
+      "Bash(ping:*)",
+      "Bash(nul)",
+      "Bash(copy \"sessions\\userbot_session.session\" \"userbot_session.session\" /Y)",
+      "Bash(python -m bots.customer.main:*)",
+      "Bash(python -m py_compile:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
